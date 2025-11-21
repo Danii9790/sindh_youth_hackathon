@@ -1,6 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'standalone',
   experimental: {
     serverActions: {
       // Allow server actions from all origins for development
@@ -15,11 +14,6 @@ const nextConfig = {
         hostname: 'picsum.photos',
       },
     ],
-  },
-  // Ensure environment variables are available on the server
-  env: {
-    NEON_POSTGRES_URL: process.env.NEON_POSTGRES_URL,
-    GEMINI_API_KEY: process.env.GEMINI_API_KEY,
   },
 };
 

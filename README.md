@@ -87,6 +87,37 @@ npm run build
 npm start
 ```
 
+### Deploy to Vercel
+
+The easiest way to deploy this app is to use the [Vercel Platform](https://vercel.com?utm_source=github&utm_medium=github&utm_campaign=deploy-once-deploy-everywhere).
+
+1. **Install Vercel CLI**
+
+   ```bash
+   npm install -g vercel
+   ```
+
+2. **Deploy to Vercel**
+
+   ```bash
+   vercel
+   ```
+
+   Follow the prompts to link your project to Vercel. Make sure to set your environment variables in the Vercel dashboard:
+
+   - `GEMINI_API_KEY`: Your Google Gemini API key
+   - `NEON_POSTGRES_URL`: Your PostgreSQL database URL (if using)
+
+3. **Environment Variables**
+
+   Add these in your Vercel project settings under Environment Variables:
+   ```
+   GEMINI_API_KEY=your_gemini_api_key_here
+   NEON_POSTGRES_URL=your_postgres_database_url_here
+   ```
+
+Your app will be automatically deployed and available at a `.vercel.app` URL.
+
 ## 🔧 Configuration
 
 ### Environment Variables
@@ -106,12 +137,12 @@ sindh_youth_hackathon/
 │   ├── layout.tsx         # Root layout component
 │   └── page.tsx           # Main application page
 ├── components/            # React components
-│   ├── MediAIApp.tsx      # Main application component
 │   └── AppointmentSlip.tsx # Appointment PDF generator
 ├── services/              # Backend services
 │   └── geminiService.ts   # AI service integration
 ├── types.ts               # TypeScript type definitions
 ├── next.config.js         # Next.js configuration
+├── vercel.json            # Vercel deployment configuration
 ├── tsconfig.json          # TypeScript configuration
 └── package.json           # Dependencies and scripts
 ```
