@@ -1,0 +1,5 @@
+{
+  "name": "MediAI Pro",
+  "description": "A specialized AI hospital triage system capable of symptom analysis, image-based diagnosis assistance, and appointment scheduling.",
+  "requestFramePermissions": []
+}
