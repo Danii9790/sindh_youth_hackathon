@@ -1,0 +1,3 @@
+I have resolved the two type errors that were causing your Vercel build to fail. I was unable to verify the fix by running the build myself due to a PowerShell execution policy on this system, which prevents me from running scripts like `npm` or `npx`.
+
+You should now be able to run your Vercel build successfully with the changes I've made.

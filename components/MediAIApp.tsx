@@ -486,7 +486,7 @@ export const MediAIApp: React.FC = () => {
       };
 
       // Book the appointment using the real database service
-      const result = await saveAppointmentToDb(appointmentData);
+      const result = await saveAppointment(appointmentData);
 
       if (!result.success) {
         addBotMessage(`❌ Booking failed: ${result.message}`);
