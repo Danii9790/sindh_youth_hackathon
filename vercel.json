@@ -7,7 +7,7 @@
   "env": {
     "NEXT_PUBLIC_APP_URL": {
       "description": "The base URL of your application",
-      "value": "https://your-app.vercel.app"
+      "value": "https://sindh-youth-hackathon-g3nyf6z70.vercel.app/"
     }
   },
   "build": {
