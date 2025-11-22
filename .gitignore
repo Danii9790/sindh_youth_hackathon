@@ -1,5 +1,7 @@
 # Logs
 .env
+.env.local
+.env.production.example
 .next
 logs
 *.log
