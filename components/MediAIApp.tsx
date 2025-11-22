@@ -21,7 +21,7 @@ import { AppointmentSlip } from './AppointmentSlip';
 import { ConversationSidebar } from './ConversationSidebar';
 import { ThemeToggle } from './ThemeToggle';
 import { ConversationService } from '@/services/conversationService';
-import { saveAppointmentToDb, checkAppointmentAvailability, validateAppointmentDateTime, getUserAppointments } from '@/services/dbService';
+import { saveAppointment, checkAppointmentAvailability, validateAppointmentDateTime, getUserAppointments } from '@/services/appointmentApi';
 import { PDFService } from '@/services/pdfService';
 import { useUser, useClerk } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';

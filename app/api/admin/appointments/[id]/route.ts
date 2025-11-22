@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic';
+
 // Admin user IDs from environment (private)
 const ADMIN_USERS = process.env.ADMIN_USERS?.split(',') || [];
 
