@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 
-// Admin user IDs from environment
-const ADMIN_USERS = process.env.NEXT_PUBLIC_ADMIN_USERS?.split(',') || [];
+// Admin user IDs from environment (private)
+const ADMIN_USERS = process.env.ADMIN_USERS?.split(',') || [];
 
 export async function PATCH(
   request: NextRequest,
