@@ -24,3 +24,15 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# clerk configuration (can include secrets)
+/.clerk/
+
+# TypeScript build artifacts
+*.tsbuildinfo
+
+# Claude IDE settings
+.claude/
+
+# Null/empty files
+nul

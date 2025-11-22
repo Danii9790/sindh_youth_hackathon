@@ -3,6 +3,25 @@
 import { Client } from '@neondatabase/serverless';
 import { Appointment } from '../types';
 
+// Database appointment interface
+export interface DatabaseAppointment {
+  id?: string;
+  userId: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  date: string;
+  time: string;
+  department: string;
+  doctor: string;
+  reason: string;
+  symptoms?: string;
+  address: string;
+  status: 'scheduled' | 'completed' | 'cancelled';
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 const DB_URL = process.env.NEON_POSTGRES_URL;
 
 // Enhanced validation for database URL
@@ -52,7 +71,18 @@ const checkAppointmentsTable = async (client: Client): Promise<void> => {
   }
 };
 
-export const saveAppointmentToDb = async (apt: Appointment): Promise<{success: boolean, message: string, appointmentId?: string}> => {
+export const saveAppointmentToDb = async (apt: Partial<Appointment> & {
+  patientName?: string;
+  phone?: string;
+  doctor: {
+    name: string;
+    specialty: string;
+    location: string;
+  };
+  date: string;
+  time: string;
+  symptoms?: string;
+}): Promise<{success: boolean, message: string, appointmentId?: string}> => {
   let client: Client | null = null;
 
   try {
@@ -289,6 +319,108 @@ export const validateAppointmentDateTime = async (date: string, time: string): P
       valid: false,
       message: "Invalid date format."
     };
+  }
+};
+
+// Get user appointments
+export const getUserAppointments = async (userId: string): Promise<DatabaseAppointment[]> => {
+  let client: Client | null = null;
+
+  try {
+    const dbUrl = validateDatabaseUrl();
+    client = new Client(dbUrl);
+    await client.connect();
+
+    // First check what columns exist in the table
+    const columnsQuery = `
+      SELECT column_name
+      FROM information_schema.columns
+      WHERE table_name = 'appointments'
+      ORDER BY ordinal_position;
+    `;
+    const columnsResult = await client.query(columnsQuery);
+    const existingColumns = columnsResult.rows.map(row => row.column_name);
+
+    let query: string;
+
+    // Build query based on existing columns
+    if (existingColumns.includes('doctor_name') && existingColumns.includes('doctor_specialty')) {
+      // Table has full schema with separate doctor columns
+      query = `
+        SELECT id, patient_name as "fullName", email, phone,
+               date, time, department, doctor_name, doctor_specialty, doctor_location, reason, symptoms, address, status,
+               created_at as "createdAt", updated_at as "updatedAt"
+        FROM appointments
+        ORDER BY date DESC, time DESC
+        LIMIT 10
+      `;
+    } else if (existingColumns.includes('doctor')) {
+      // Table has simplified schema with single doctor column
+      query = `
+        SELECT id, patient_name as "fullName", email, phone,
+               date, time, department, doctor, reason, symptoms, address, status,
+               created_at as "createdAt", updated_at as "updatedAt"
+        FROM appointments
+        ORDER BY date DESC, time DESC
+        LIMIT 10
+      `;
+    } else {
+      // Table has basic schema
+      query = `
+        SELECT id, patient_name as "fullName", phone, date, time, symptoms,
+               booked_at as "createdAt"
+        FROM appointments
+        ORDER BY date DESC, time DESC
+        LIMIT 10
+      `;
+    }
+
+    const result = await client.query(query);
+
+    // Transform results to match DatabaseAppointment interface
+    return result.rows.map(row => {
+      // Handle different doctor column formats
+      let doctor = 'General Doctor';
+      if (row.doctor_name) {
+        // Format: "Dr. Name (Specialty)"
+        doctor = row.doctor_name;
+        if (row.doctor_specialty) {
+          doctor += ` (${row.doctor_specialty})`;
+        }
+      } else if (row.doctor) {
+        // Single doctor column
+        doctor = row.doctor;
+      }
+
+      return {
+        id: row.id,
+        userId: userId, // Add userId since it's not in database
+        fullName: row.fullName || row.patient_name || 'Unknown',
+        email: row.email || '',
+        phone: row.phone || '',
+        date: row.date,
+        time: row.time,
+        department: row.department || 'general',
+        doctor: doctor,
+        reason: row.reason || row.symptoms || 'General consultation',
+        symptoms: row.symptoms || '',
+        address: row.address || '',
+        status: row.status || 'scheduled',
+        createdAt: row.createdAt || row.booked_at || new Date().toISOString(),
+        updatedAt: row.updatedAt || row.createdAt || row.booked_at || new Date().toISOString()
+      };
+    });
+  } catch (error) {
+    console.error("Error fetching user appointments:", error);
+    return [];
+  } finally {
+    if (client) {
+      try {
+        await client.end();
+      } catch (closeError) {
+        console.error("Error closing user appointments connection:", closeError);
+      }
+    }
   }
 };
 
