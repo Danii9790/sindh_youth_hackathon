@@ -5,7 +5,7 @@ import { Appointment, DatabaseAppointment } from '../types';
 let pool: Pool | null = null;
 
 // Initialize database connection pool
-const getDatabasePool = (): Pool => {
+export const getDatabasePool = (): Pool => {
   if (!pool) {
     const DB_URL = process.env.NEON_POSTGRES_URL;
 

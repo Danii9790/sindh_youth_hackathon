@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
+import { getDatabasePool, executeWithRetry } from '@/lib/database';
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic';
@@ -15,16 +16,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const DB_URL = process.env.NEON_POSTGRES_URL;
-    if (!DB_URL) {
-      return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
-    }
-
-    const { Client } = await import('@neondatabase/serverless');
-    const client = new Client(DB_URL);
+    const pool = getDatabasePool();
+    const client = await pool.connect();
 
     try {
-      await client.connect();
 
       // Get current date and date ranges
       const now = new Date();
@@ -107,7 +102,7 @@ export async function GET(request: NextRequest) {
       console.error('Database error:', dbError);
       return NextResponse.json({ error: 'Database operation failed' }, { status: 500 });
     } finally {
-      await client.end();
+      client.release();
     }
 
   } catch (error) {
