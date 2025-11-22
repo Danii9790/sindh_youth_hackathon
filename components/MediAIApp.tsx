@@ -13,7 +13,7 @@ import {
   Download,
   Calendar
 } from 'lucide-react';
-import { Message, Sender, Doctor, Conversation } from '@/types';
+import { Message, Sender, Doctor, Conversation, DatabaseAppointment } from '@/types';
 
 // NOTE: geminiService is no longer statically imported to avoid module-init errors in browser
 // import { analyzeSymptoms, analyzeImage, chatWithMediAI } from '@/services/geminiService';
@@ -21,7 +21,7 @@ import { AppointmentSlip } from './AppointmentSlip';
 import { ConversationSidebar } from './ConversationSidebar';
 import { ThemeToggle } from './ThemeToggle';
 import { ConversationService } from '@/services/conversationService';
-import { saveAppointmentToDb, checkAppointmentAvailability, validateAppointmentDateTime, getUserAppointments, DatabaseAppointment } from '@/services/dbService';
+import { saveAppointmentToDb, checkAppointmentAvailability, validateAppointmentDateTime, getUserAppointments } from '@/services/dbService';
 import { PDFService } from '@/services/pdfService';
 import { useUser, useClerk } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';

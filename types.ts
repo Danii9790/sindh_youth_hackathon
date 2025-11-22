@@ -101,3 +101,21 @@ export interface UserPreferences {
   language: string;
   timezone: string;
 }
+
+export interface DatabaseAppointment {
+  id?: string;
+  userId: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  date: string;
+  time: string;
+  department: string;
+  doctor: string;
+  reason: string;
+  symptoms?: string;
+  address: string;
+  status: 'scheduled' | 'completed' | 'cancelled';
+  createdAt?: string;
+  updatedAt?: string;
+}

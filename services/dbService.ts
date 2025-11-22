@@ -1,26 +1,7 @@
 'use server';
 
 import { Client } from '@neondatabase/serverless';
-import { Appointment } from '../types';
-
-// Database appointment interface
-export interface DatabaseAppointment {
-  id?: string;
-  userId: string;
-  fullName: string;
-  email: string;
-  phone: string;
-  date: string;
-  time: string;
-  department: string;
-  doctor: string;
-  reason: string;
-  symptoms?: string;
-  address: string;
-  status: 'scheduled' | 'completed' | 'cancelled';
-  createdAt?: string;
-  updatedAt?: string;
-}
+import { Appointment, DatabaseAppointment } from '../types';
 
 const DB_URL = process.env.NEON_POSTGRES_URL;
 
@@ -71,7 +52,7 @@ const checkAppointmentsTable = async (client: Client): Promise<void> => {
   }
 };
 
-export const saveAppointmentToDb = async (apt: Partial<Appointment> & {
+export const saveAppointmentToDb = async (apt: {
   patientName?: string;
   phone?: string;
   doctor: {
