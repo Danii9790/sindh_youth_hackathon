@@ -36,9 +36,11 @@ export async function POST(request: NextRequest) {
       patientName: body.fullName || body.patientName,
       phone: body.phone,
       doctor: {
+        id: body.doctor.id || 'default-doctor-id',
         name: body.doctor.name || body.doctor,
         specialty: body.doctor.specialty,
-        location: body.doctor.location
+        location: body.doctor.location,
+        image: body.doctor.image || '/default-doctor.jpg'
       },
       date: body.date,
       time: body.time,

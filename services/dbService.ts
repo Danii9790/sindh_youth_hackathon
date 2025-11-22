@@ -56,9 +56,11 @@ export const saveAppointmentToDb = async (apt: {
   patientName?: string;
   phone?: string;
   doctor: {
+    id?: string;
     name: string;
     specialty: string;
     location: string;
+    image?: string;
   };
   date: string;
   time: string;
