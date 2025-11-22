@@ -181,7 +181,7 @@ export const MediAIApp: React.FC = () => {
   // Load user appointments
   const loadUserAppointments = async () => {
     try {
-      const appointments = await getUserAppointments(user!.id);
+      const appointments = await getUserAppointments();
       setUserAppointments(appointments);
     } catch (error) {
       console.error('Error loading appointments:', error);
