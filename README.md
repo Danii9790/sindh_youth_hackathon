@@ -127,7 +127,22 @@ Create a `.env.local` file with the following variables:
 ```env
 OPENAI_API_KEY=your_openai_api_key_here
 DATABASE_URL=your_postgres_database_url_here  # Optional: for full functionality
+OPENAI_REQUESTS_PER_MINUTE=15  # Optional: Rate limiting
+OPENAI_RATE_LIMIT_ENABLED=false  # Optional: Enable/disable rate limiting
 ```
+
+### Troubleshooting
+
+#### Region/Country Restrictions
+
+If you encounter a `403 Country, region, or territory not supported` error:
+
+1. **Check OpenAI Availability**: OpenAI API may not be available in all countries/regions
+2. **Vercel Region**: Deploy to a supported region (e.g., US, EU) in Vercel project settings
+3. **Alternative Solutions**:
+   - Use a proxy service for OpenAI API
+   - Consider using a different AI service provider
+   - Contact OpenAI support for region availability
 
 ## 📁 Project Structure
 

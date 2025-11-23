@@ -3,23 +3,29 @@
   "outputDirectory": ".next",
   "installCommand": "npm install",
   "framework": "nextjs",
-  "regions": ["hkg1"],
+
+  "regions": ["iad1"],  
+
   "build": {
     "env": {
       "NEXT_TELEMETRY_DISABLED": "1"
     }
   },
+
   "functions": {
     "app/**/*.{js,ts,jsx,tsx}": {
-      "maxDuration": 30
+      "maxDuration": 60  
     },
     "pages/api/**/*.{js,ts}": {
-      "maxDuration": 30
+      "maxDuration": 60
     }
   },
+
   "env": {
-    "NEXT_PUBLIC_APP_URL": "https://www.doctoragent.systems"
+    "NEXT_PUBLIC_APP_URL": "https://www.doctoragent.systems",
+    "OPENAI_API_KEY": "@openai_api_key"
   },
+
   "headers": [
     {
       "source": "/(.*)",

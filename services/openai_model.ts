@@ -174,10 +174,26 @@ Rules:
   } catch (error: any) {
     console.error("Error analyzing symptoms:", error);
 
+    // Handle country/region restriction error
+    const errorCode = error?.code || error?.error?.code || '';
+    const errorType = error?.type || error?.error?.type || '';
+    const errorMessage = error?.message || error?.error?.message || error?.toString() || '';
+    
+    if (errorCode === 'unsupported_country_region_territory' || 
+        errorType === 'request_forbidden' || 
+        errorMessage.includes('Country, region, or territory not supported') ||
+        errorMessage.includes('unsupported_country')) {
+      return "I apologize, but the AI service is currently unavailable in your region. For immediate medical concerns, please consult with a healthcare professional or contact emergency services. You can also try using a VPN or contact support for assistance.";
+    }
+
     // Handle specific API quota error
-    const errorMessage = error?.message || error?.toString() || '';
     if (errorMessage.includes('rate_limit') || errorMessage.includes('quota') || errorMessage.includes('insufficient_quota')) {
       return "I'm currently experiencing high demand and have reached my usage limit. Please try again in a few hours, or consult with a healthcare professional for immediate concerns.";
+    }
+
+    // Handle authentication errors
+    if (errorCode === 'invalid_api_key' || errorMessage.includes('Invalid API key') || errorMessage.includes('authentication')) {
+      return "I'm experiencing a configuration issue. Please contact support or try again later. For urgent medical concerns, please consult with a healthcare professional.";
     }
 
     return "I am having trouble connecting to the medical analysis service right now. Please try again later or consult a healthcare professional if you have immediate concerns.";
@@ -263,10 +279,26 @@ Keep the explanation short, friendly, and easy to understand.`
   } catch (error: any) {
     console.error("Error analyzing image:", error);
 
+    // Handle country/region restriction error
+    const errorCode = error?.code || error?.error?.code || '';
+    const errorType = error?.type || error?.error?.type || '';
+    const errorMessage = error?.message || error?.error?.message || error?.toString() || '';
+    
+    if (errorCode === 'unsupported_country_region_territory' || 
+        errorType === 'request_forbidden' || 
+        errorMessage.includes('Country, region, or territory not supported') ||
+        errorMessage.includes('unsupported_country')) {
+      return "I apologize, but the AI image analysis service is currently unavailable in your region. For immediate medical concerns, please consult with a healthcare professional or contact emergency services. You can also try using a VPN or contact support for assistance.";
+    }
+
     // Handle specific API quota error
-    const errorMessage = error?.message || error?.toString() || '';
     if (errorMessage.includes('rate_limit') || errorMessage.includes('quota') || errorMessage.includes('insufficient_quota')) {
       return "I'm currently experiencing high demand and have reached my usage limit for image analysis. Please try again in a few hours, or consult with a healthcare professional for immediate concerns.";
+    }
+
+    // Handle authentication errors
+    if (errorCode === 'invalid_api_key' || errorMessage.includes('Invalid API key') || errorMessage.includes('authentication')) {
+      return "I'm experiencing a configuration issue. Please contact support or try again later. For urgent medical concerns, please consult with a healthcare professional.";
     }
 
     return "Image processing failed. Please try again later or ensure the image is clear and properly formatted.";
@@ -347,10 +379,28 @@ You provide guidance but are NOT a replacement for a real doctor.`
   } catch (error: any) {
     console.error("Chat error:", error);
 
+    // Handle country/region restriction error
+    const errorCode = error?.code || error?.error?.code || '';
+    const errorType = error?.type || error?.error?.type || '';
+    const errorMessage = error?.message || error?.error?.message || error?.toString() || '';
+    
+    if (errorCode === 'unsupported_country_region_territory' || 
+        errorType === 'request_forbidden' || 
+        errorMessage.includes('Country, region, or territory not supported') ||
+        errorMessage.includes('unsupported_country')) {
+      // Use fallback response but with a note about region restriction
+      const fallback = getFallbackResponse(message, history);
+      return `${fallback}\n\nNote: The AI service is currently unavailable in your region. For immediate assistance, please consult with a healthcare professional.`;
+    }
+
     // Handle specific API quota error with fallback response
-    const errorMessage = error?.message || error?.toString() || '';
     if (errorMessage.includes('rate_limit') || errorMessage.includes('quota') || errorMessage.includes('insufficient_quota')) {
       return getFallbackResponse(message, history);
+    }
+
+    // Handle authentication errors
+    if (errorCode === 'invalid_api_key' || errorMessage.includes('Invalid API key') || errorMessage.includes('authentication')) {
+      return getFallbackResponse(message, history) + "\n\nNote: There's a configuration issue. Please contact support.";
     }
 
     return "I'm experiencing technical difficulties right now. Please try again in a moment, or contact emergency services if this is an urgent medical matter.";
