@@ -1,5 +1,5 @@
-import { AdminDashboard } from '@/components/AdminDashboard';
+import { AdminWrapper } from '@/components/AdminWrapper';
 
 export default function AdminPage() {
-  return <AdminDashboard />;
+  return <AdminWrapper />;
 }
