@@ -155,7 +155,7 @@ Remember: You are a supportive tool that complements, not replaces, professional
       messages: [],
       createdAt: now,
       updatedAt: now,
-      model: 'gemini-2.5-flash',
+      model: 'gemini-1.5-flash',
       context: {
         systemPrompt: this.agentContext.systemPrompt,
         temperature: 0.7,

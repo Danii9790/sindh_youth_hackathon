@@ -1,11 +1,9 @@
 
 'use server';
 
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY
-});
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 // Rate limiting to prevent quota exhaustion
 const requestCache = new Map<string, { timestamp: number; count: number }>();
@@ -110,7 +108,7 @@ function getFallbackResponse(message: string, history: any[] = []): string {
 }
 
 /* ============================================================
-   1️⃣ TEXT-BASED SYMPTOM ANALYSIS (Gemini 2.5 Flash)
+   1️⃣ TEXT-BASED SYMPTOM ANALYSIS (Gemini 1.5 Flash)
    ============================================================ */
 export const analyzeSymptoms = async (symptoms: string): Promise<string> => {
   // Check rate limit first
@@ -120,10 +118,17 @@ export const analyzeSymptoms = async (symptoms: string): Promise<string> => {
   }
 
   try {
-    const response = await ai.models.generateContent({
+    const model = genAI.getGenerativeModel({ 
       model: "gemini-1.5-flash",
+      generationConfig: {
+        temperature: 0.4,
+        topP: 0.9,
+        topK: 40,
+        maxOutputTokens: 400,
+      }
+    });
 
-      contents: `You are **Dr. AI**, a senior physician with 25 years of clinical experience.
+    const prompt = `You are **Dr. AI**, a senior physician with 25 years of clinical experience.
 Your job is to carefully analyze the patient's symptoms and give clear, helpful medical guidance.
 
 Patient Symptoms: "${symptoms}"
@@ -159,24 +164,19 @@ Rules:
 - Make the answer friendly and supportive.
 - Add a safety disclaimer at the end.
 - End with: "Would you like to book an appointment now?"
+`;
 
-      `,
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
 
-      config: {
-        temperature: 0.4,   // more accurate
-        topP: 0.9,
-        topK: 40,
-        maxOutputTokens: 400,
-      }
-    });
-
-    return response.text ||
-      "I apologize, I couldn't analyze the symptoms.";
-  } catch (error) {
+    return text || "I apologize, I couldn't analyze the symptoms.";
+  } catch (error: any) {
     console.error("Error analyzing symptoms:", error);
 
     // Handle specific API quota error
-    if (error.message.includes('RESOURCE_EXHAUSTED') || error.message.includes('quota')) {
+    const errorMessage = error?.message || error?.toString() || '';
+    if (errorMessage.includes('RESOURCE_EXHAUSTED') || errorMessage.includes('quota')) {
       return "I'm currently experiencing high demand and have reached my usage limit. Please try again in a few hours, or consult with a healthcare professional for immediate concerns.";
     }
 
@@ -199,20 +199,24 @@ export const analyzeImage = async (base64Image: string, prompt: string): Promise
   try {
     const cleanBase64 = base64Image.split(",")[1] || base64Image;
 
-    const response = await ai.models.generateContent({
+    const model = genAI.getGenerativeModel({ 
       model: "gemini-1.5-flash",
+      generationConfig: {
+        temperature: 0.5,
+        topP: 0.9,
+        maxOutputTokens: 500,
+      }
+    });
 
-      contents: {
-        parts: [
-          {
-            inlineData: {
-              mimeType: "image/jpeg",
-              data: cleanBase64
-            }
-          },
-          {
-            text: `
-              You are an **Expert Medical Imaging Specialist** with deep experience in X-rays, scans, lab reports, and medical images.
+    const imagePart = {
+      inlineData: {
+        data: cleanBase64,
+        mimeType: "image/jpeg"
+      }
+    };
+
+    const textPart = `
+You are an **Expert Medical Imaging Specialist** with deep experience in X-rays, scans, lab reports, and medical images.
 
 Analyze the uploaded image/report and follow this exact structure:
 
@@ -247,26 +251,19 @@ Analyze the uploaded image/report and follow this exact structure:
 User prompt: ${prompt}
 
 Keep the explanation short, friendly, and easy to understand.
+`;
 
+    const result = await model.generateContent([textPart, imagePart]);
+    const response = await result.response;
+    const text = response.text();
 
-            `
-          }
-        ]
-      },
-
-      config: {
-        temperature: 0.5,
-        topP: 0.9,
-        maxOutputTokens: 500,
-      }
-    });
-
-    return response.text || "Could not analyze this image.";
-  } catch (error) {
+    return text || "Could not analyze this image.";
+  } catch (error: any) {
     console.error("Error analyzing image:", error);
 
     // Handle specific API quota error
-    if (error.message.includes('RESOURCE_EXHAUSTED') || error.message.includes('quota')) {
+    const errorMessage = error?.message || error?.toString() || '';
+    if (errorMessage.includes('RESOURCE_EXHAUSTED') || errorMessage.includes('quota')) {
       return "I'm currently experiencing high demand and have reached my usage limit for image analysis. Please try again in a few hours, or consult with a healthcare professional for immediate concerns.";
     }
 
@@ -293,10 +290,16 @@ export const chatWithMediAI = async (
     // Build conversation context
     const conversationHistory = history.slice(-10).map(msg => `${msg.role}: ${msg.content}`).join('\n');
 
-    const response = await ai.models.generateContent({
+    const model = genAI.getGenerativeModel({ 
       model: "gemini-1.5-flash",
+      generationConfig: {
+        temperature: 0.7,
+        topP: 0.9,
+        maxOutputTokens: 800
+      }
+    });
 
-      contents: `You are MediAI, a compassionate and highly skilled medical AI assistant. 
+    const prompt = `You are MediAI, a compassionate and highly skilled medical AI assistant. 
 You give safe, friendly, and medically accurate guidance.
 
 Recent conversation context:
@@ -323,21 +326,19 @@ Style:
 
 Remember:
 You provide guidance but are NOT a replacement for a real doctor.
-`,
+`;
 
-      config: {
-        temperature: 0.7,
-        topP: 0.9,
-        maxOutputTokens: 800
-      }
-    });
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
 
-    return response.text || "I apologize, but I couldn't process that request. Please try again.";
-  } catch (error) {
+    return text || "I apologize, but I couldn't process that request. Please try again.";
+  } catch (error: any) {
     console.error("Chat error:", error);
 
     // Handle specific API quota error with fallback response
-    if (error.message.includes('RESOURCE_EXHAUSTED') || error.message.includes('quota')) {
+    const errorMessage = error?.message || error?.toString() || '';
+    if (errorMessage.includes('RESOURCE_EXHAUSTED') || errorMessage.includes('quota')) {
       return getFallbackResponse(message, history);
     }
 
