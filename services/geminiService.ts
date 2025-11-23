@@ -7,6 +7,51 @@ const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY
 });
 
+// Rate limiting to prevent quota exhaustion
+const requestCache = new Map<string, { timestamp: number; count: number }>();
+const QUOTA_LIMITS = {
+  REQUESTS_PER_MINUTE: parseInt(process.env.GEMINI_REQUESTS_PER_MINUTE || '15'),  // Conservative limit for free tier
+  REQUESTS_PER_HOUR: 100,   // Daily quota spread across hours
+  COOLDOWN_PERIOD: 60000    // 1 minute cooldown when approaching limits
+};
+
+// Enhanced rate limiting function
+function checkRateLimit(): { allowed: boolean; waitTime?: number; fallbackMessage?: string } {
+  // Check if rate limiting is disabled
+  if (process.env.GEMINI_RATE_LIMIT_ENABLED !== 'true') {
+    return { allowed: true };
+  }
+
+  const now = Date.now();
+  const windowStart = now - 60000; // 1 minute window
+
+  // Clean old entries
+  for (const [key, data] of requestCache.entries()) {
+    if (data.timestamp < windowStart) {
+      requestCache.delete(key);
+    }
+  }
+
+  // Count recent requests
+  const recentRequests = Array.from(requestCache.values()).filter(
+    data => data.timestamp >= windowStart
+  ).length;
+
+  if (recentRequests >= QUOTA_LIMITS.REQUESTS_PER_MINUTE) {
+    return {
+      allowed: false,
+      waitTime: 60000,
+      fallbackMessage: "I'm experiencing high demand and have reached my usage limit for this minute. Please wait a moment before trying again."
+    };
+  }
+
+  // Track this request
+  const requestKey = now.toString();
+  requestCache.set(requestKey, { timestamp: now, count: 1 });
+
+  return { allowed: true };
+}
+
 // Fallback responses for when AI is unavailable
 const FALLBACK_RESPONSES = {
   greeting: [
@@ -68,12 +113,18 @@ function getFallbackResponse(message: string, history: any[] = []): string {
    1️⃣ TEXT-BASED SYMPTOM ANALYSIS (Gemini 2.5 Flash)
    ============================================================ */
 export const analyzeSymptoms = async (symptoms: string): Promise<string> => {
+  // Check rate limit first
+  const rateLimitResult = checkRateLimit();
+  if (!rateLimitResult.allowed) {
+    return rateLimitResult.fallbackMessage || "Please try again in a moment.";
+  }
+
   try {
     const response = await ai.models.generateContent({
       model: "gemini-2.0-flash",
 
-      contents: `You are **Dr. AI**, a senior physician with 25 years of clinical experience. 
-Your job is to carefully analyze the patient’s symptoms and give clear, helpful medical guidance.
+      contents: `You are **Dr. AI**, a senior physician with 25 years of clinical experience.
+Your job is to carefully analyze the patient's symptoms and give clear, helpful medical guidance.
 
 Patient Symptoms: "${symptoms}"
 
@@ -139,6 +190,12 @@ Rules:
    2️⃣ IMAGE ANALYSIS (Multimodal)
    ============================================================ */
 export const analyzeImage = async (base64Image: string, prompt: string): Promise<string> => {
+  // Check rate limit first (image processing uses more quota)
+  const rateLimitResult = checkRateLimit();
+  if (!rateLimitResult.allowed) {
+    return rateLimitResult.fallbackMessage || "Please try again in a moment for image analysis.";
+  }
+
   try {
     const cleanBase64 = base64Image.split(",")[1] || base64Image;
 
@@ -175,7 +232,7 @@ Analyze the uploaded image/report and follow this exact structure:
 
 5. Suggested Medicines (OTC Only):
    - Give safe over-the-counter options only when appropriate.
-   - Provide simple dosage hints (e.g., “take 1 tablet if needed”).
+   - Provide simple dosage hints (e.g., "take 1 tablet if needed").
    - Do NOT prescribe antibiotics or strong medicines.
 
 6. What You Should Do Now:
@@ -226,6 +283,12 @@ export const chatWithMediAI = async (
   history: { role: string; content: string }[],
   message: string
 ): Promise<string> => {
+  // Check rate limit first
+  const rateLimitResult = checkRateLimit();
+  if (!rateLimitResult.allowed) {
+    return getFallbackResponse(message, history);
+  }
+
   try {
     // Build conversation context
     const conversationHistory = history.slice(-10).map(msg => `${msg.role}: ${msg.content}`).join('\n');

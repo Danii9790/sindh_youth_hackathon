@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { chatWithMediAI } from '@/services/geminiService';
 
+export const runtime = 'edge';
+export const preferredRegion = ['iad1']; // Gemini allowed region
+
 export async function POST(request: NextRequest) {
   try {
     const { history, message } = await request.json();
@@ -12,7 +15,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Use the real Gemini AI service for medical chat
     const response = await chatWithMediAI(history || [], message);
 
     return NextResponse.json({ response });

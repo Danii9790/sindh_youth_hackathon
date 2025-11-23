@@ -60,6 +60,8 @@ export const MediAIApp: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [lastRequestTime, setLastRequestTime] = useState<number>(0);
+  const [isRateLimited, setIsRateLimited] = useState(false);
 
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -317,6 +319,20 @@ export const MediAIApp: React.FC = () => {
   const sendMessage = async () => {
     if ((!input.trim() && !selectedFile) || isAnalyzing) return;
 
+    // Client-side rate limiting - prevent requests within 3 seconds
+    const now = Date.now();
+    const timeSinceLastRequest = now - lastRequestTime;
+    const MIN_REQUEST_INTERVAL = 3000; // 3 seconds
+
+    if (timeSinceLastRequest < MIN_REQUEST_INTERVAL && lastRequestTime > 0) {
+      const waitTime = Math.ceil((MIN_REQUEST_INTERVAL - timeSinceLastRequest) / 1000);
+      await addBotMessage(`Please wait ${waitTime} second${waitTime > 1 ? 's' : ''} before sending another message. This helps me manage my usage limits and provide better service to everyone.`);
+      return;
+    }
+
+    setLastRequestTime(now);
+    setIsRateLimited(false);
+
     let conversationId = currentConversationId;
 
     // If there's no current conversation, create one
@@ -410,8 +426,11 @@ export const MediAIApp: React.FC = () => {
 
       // Check for specific error types and provide helpful messages
       if (error instanceof Error) {
-        if (error.message.includes('quota') || error.message.includes('RESOURCE_EXHAUSTED')) {
-          errorMessage = "I'm currently experiencing high demand and have reached my usage limit. Please try again in a few hours, or consult with a healthcare professional for immediate concerns.";
+        if (error.message.includes('quota') || error.message.includes('RESOURCE_EXHAUSTED') || error.message.includes('high demand') || error.message.includes('usage limit')) {
+          errorMessage = "I'm currently experiencing high demand and have reached my usage limit. Please try again in a few hours, or consult with a healthcare professional for immediate concerns. You can still book appointments using the 📅 button.";
+          setIsRateLimited(true);
+          // Prevent further requests for 5 minutes
+          setLastRequestTime(Date.now() + 300000);
         } else if (error.message.includes('network') || error.message.includes('fetch')) {
           errorMessage = "I'm having trouble connecting to my services. Please check your internet connection and try again.";
         } else if (error.message.includes('timeout')) {
@@ -797,12 +816,13 @@ export const MediAIApp: React.FC = () => {
               
               <button
                 onClick={sendMessage}
-                disabled={(!input.trim() && !selectedFile) || isAnalyzing}
+                disabled={(!input.trim() && !selectedFile) || isAnalyzing || isRateLimited}
                 className={`p-2 rounded-xl transition-all ${
-                  (!input.trim() && !selectedFile) || isAnalyzing
+                  (!input.trim() && !selectedFile) || isAnalyzing || isRateLimited
                     ? 'bg-slate-200 text-slate-400'
                     : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-600/20'
                 }`}
+                title={isRateLimited ? "Rate limit active - please wait" : "Send message"}
               >
                 {isAnalyzing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
               </button>
@@ -816,9 +836,16 @@ export const MediAIApp: React.FC = () => {
                 <Calendar className="w-5 h-5" />
               </button>
             </div>
-            <p className="text-center text-[10px] text-slate-400 mt-2">
-              AI can make mistakes. Consider checking important information. Emergency? Call 1122.
-            </p>
+            <div className="flex flex-col items-center gap-1 mt-2">
+              {isRateLimited && (
+                <p className="text-center text-[10px] text-amber-600 dark:text-amber-400">
+                  ⚠️ High demand detected - rate limiting active to manage usage limits
+                </p>
+              )}
+              <p className="text-center text-[10px] text-slate-400">
+                AI can make mistakes. Consider checking important information. Emergency? Call 1122.
+              </p>
+            </div>
           </div>
         </div>
       </div>
