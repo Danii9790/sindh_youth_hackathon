@@ -8,17 +8,6 @@ import { MediAIApp } from '@/components/MediAIApp';
 
 export default function Page() {
   const { user, isSignedIn, isLoaded } = useUser();
-  const router = useRouter();
-
-  // Check if user is admin and redirect to admin dashboard
-  useEffect(() => {
-    if (isSignedIn && user) {
-      const adminUsers = process.env.NEXT_PUBLIC_ADMIN_USERS?.split(',') || [];
-      if (adminUsers.includes(user.id)) {
-        router.push('/admin');
-      }
-    }
-  }, [isSignedIn, user, router]);
 
   // Show loading state while checking authentication
   if (!isLoaded) {
@@ -29,13 +18,10 @@ export default function Page() {
     );
   }
 
-  // If authenticated but not admin, show the main application
+  // If authenticated, show the main application
+  // Admin users will be redirected by middleware
   if (isSignedIn && user) {
-    const adminUsers = process.env.NEXT_PUBLIC_ADMIN_USERS?.split(',') || [];
-    // Don't show MediAIApp for admin users as they'll be redirected
-    if (!adminUsers.includes(user.id)) {
-      return <MediAIApp />;
-    }
+    return <MediAIApp />;
   }
 
   // If not authenticated, show the landing page
