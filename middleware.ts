@@ -10,25 +10,18 @@ const isProtectedRoute = createRouteMatcher([
 export default clerkMiddleware((auth, req) => {
   const { userId } = auth();
 
-  // Handle post-authentication routing
-  if (userId && req.nextUrl.pathname === '/') {
+  // Handle admin routing for any authenticated user
+  if (userId) {
     const adminUsers = process.env.NEXT_PUBLIC_ADMIN_USERS?.split(',') || [];
     const isAdmin = adminUsers.includes(userId);
 
-    if (isAdmin) {
-      // Redirect admin users to admin dashboard
+    // If admin is on dashboard or home, redirect to admin panel
+    if (isAdmin && (req.nextUrl.pathname === '/' || req.nextUrl.pathname === '/dashboard')) {
       return NextResponse.redirect(new URL('/admin', req.url));
     }
-    // Regular users stay on home page (will see MediAIApp)
-  }
 
-  // Protect admin routes
-  if (req.nextUrl.pathname.startsWith('/admin') && userId) {
-    const adminUsers = process.env.NEXT_PUBLIC_ADMIN_USERS?.split(',') || [];
-    const isAdmin = adminUsers.includes(userId);
-
-    if (!isAdmin) {
-      // Non-admin users trying to access admin routes
+    // If non-admin is trying to access admin routes, redirect to home
+    if (!isAdmin && req.nextUrl.pathname.startsWith('/admin')) {
       return NextResponse.redirect(new URL('/', req.url));
     }
   }
