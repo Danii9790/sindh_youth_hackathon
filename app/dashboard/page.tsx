@@ -1,7 +1,6 @@
 import { auth } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import { isAdmin } from '@/lib/admin-auth';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default async function DashboardPage() {
   const { userId } = await auth();
@@ -21,15 +20,13 @@ export default async function DashboardPage() {
   // For regular users, show a simple dashboard or redirect to home
   return (
     <div className="container mx-auto p-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Welcome to Your Dashboard</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <h2 className="text-2xl font-bold mb-4">Welcome to Your Dashboard</h2>
+        <div className="space-y-2">
           <p>You are logged in as a regular user.</p>
-          <p>Your User ID: {userId}</p>
-        </CardContent>
-      </Card>
+          <p className="text-sm text-gray-600">Your User ID: {userId}</p>
+        </div>
+      </div>
     </div>
   );
 }

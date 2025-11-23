@@ -8,7 +8,7 @@ export async function isAdmin() {
     return false;
   }
 
-  const adminUsers = process.env.ADMIN_USERS?.split(',') || [];
+  const adminUsers = process.env.NEXT_PUBLIC_ADMIN_USERS?.split(',') || [];
   return adminUsers.includes(userId);
 }
 
