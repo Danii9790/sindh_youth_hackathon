@@ -29,7 +29,8 @@ export default function RootLayout({
       publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
       signUpUrl="/sign-up"
       signInUrl="/sign-in"
-      fallbackRedirectUrl="/"
+      signInFallbackRedirectUrl="/"
+      signUpFallbackRedirectUrl="/"
       afterSignInUrl="/"
       afterSignUpUrl="/"
     >
