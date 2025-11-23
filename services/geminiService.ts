@@ -108,7 +108,7 @@ function getFallbackResponse(message: string, history: any[] = []): string {
 }
 
 /* ============================================================
-   1️⃣ TEXT-BASED SYMPTOM ANALYSIS (Gemini 1.5 Flash)
+   1️⃣ TEXT-BASED SYMPTOM ANALYSIS (Gemini 1.5 Flash Latest)
    ============================================================ */
 export const analyzeSymptoms = async (symptoms: string): Promise<string> => {
   // Check rate limit first
@@ -118,16 +118,6 @@ export const analyzeSymptoms = async (symptoms: string): Promise<string> => {
   }
 
   try {
-    const model = genAI.getGenerativeModel({ 
-      model: "gemini-1.5-flash",
-      generationConfig: {
-        temperature: 0.4,
-        topP: 0.9,
-        topK: 40,
-        maxOutputTokens: 400,
-      }
-    });
-
     const prompt = `You are **Dr. AI**, a senior physician with 25 years of clinical experience.
 Your job is to carefully analyze the patient's symptoms and give clear, helpful medical guidance.
 
@@ -166,11 +156,42 @@ Rules:
 - End with: "Would you like to book an appointment now?"
 `;
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
+    // Try primary model first, fallback to gemini-pro if not available
+    const modelsToTry = ["gemini-1.5-flash-latest", "gemini-pro"];
+    let lastError: any = null;
 
-    return text || "I apologize, I couldn't analyze the symptoms.";
+    for (const modelName of modelsToTry) {
+      try {
+        const model = genAI.getGenerativeModel({ 
+          model: modelName,
+          generationConfig: {
+            temperature: 0.4,
+            topP: 0.9,
+            topK: 40,
+            maxOutputTokens: 400,
+          }
+        });
+
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const text = response.text();
+
+        return text || "I apologize, I couldn't analyze the symptoms.";
+      } catch (modelError: any) {
+        lastError = modelError;
+        const errorMsg = modelError?.message || modelError?.toString() || '';
+        // If it's a 404 (model not found), try next model
+        if (errorMsg.includes('404') || errorMsg.includes('not found')) {
+          console.warn(`Model ${modelName} not available, trying next...`);
+          continue;
+        }
+        // For other errors, throw immediately
+        throw modelError;
+      }
+    }
+
+    // If all models failed, throw the last error
+    throw lastError;
   } catch (error: any) {
     console.error("Error analyzing symptoms:", error);
 
@@ -178,6 +199,11 @@ Rules:
     const errorMessage = error?.message || error?.toString() || '';
     if (errorMessage.includes('RESOURCE_EXHAUSTED') || errorMessage.includes('quota')) {
       return "I'm currently experiencing high demand and have reached my usage limit. Please try again in a few hours, or consult with a healthcare professional for immediate concerns.";
+    }
+
+    // Handle 404 errors (model not found)
+    if (errorMessage.includes('404') || errorMessage.includes('not found')) {
+      return "I am having trouble connecting to the medical analysis service right now. Please try again later or consult a healthcare professional if you have immediate concerns.";
     }
 
     return "I am having trouble connecting to the medical analysis service right now. Please try again later or consult a healthcare professional if you have immediate concerns.";
@@ -198,15 +224,6 @@ export const analyzeImage = async (base64Image: string, prompt: string): Promise
 
   try {
     const cleanBase64 = base64Image.split(",")[1] || base64Image;
-
-    const model = genAI.getGenerativeModel({ 
-      model: "gemini-1.5-flash",
-      generationConfig: {
-        temperature: 0.5,
-        topP: 0.9,
-        maxOutputTokens: 500,
-      }
-    });
 
     const imagePart = {
       inlineData: {
@@ -253,11 +270,41 @@ User prompt: ${prompt}
 Keep the explanation short, friendly, and easy to understand.
 `;
 
-    const result = await model.generateContent([textPart, imagePart]);
-    const response = await result.response;
-    const text = response.text();
+    // Try primary model first, fallback to gemini-pro if not available
+    const modelsToTry = ["gemini-1.5-flash-latest", "gemini-pro"];
+    let lastError: any = null;
 
-    return text || "Could not analyze this image.";
+    for (const modelName of modelsToTry) {
+      try {
+        const model = genAI.getGenerativeModel({ 
+          model: modelName,
+          generationConfig: {
+            temperature: 0.5,
+            topP: 0.9,
+            maxOutputTokens: 500,
+          }
+        });
+
+        const result = await model.generateContent([textPart, imagePart]);
+        const response = await result.response;
+        const text = response.text();
+
+        return text || "Could not analyze this image.";
+      } catch (modelError: any) {
+        lastError = modelError;
+        const errorMsg = modelError?.message || modelError?.toString() || '';
+        // If it's a 404 (model not found), try next model
+        if (errorMsg.includes('404') || errorMsg.includes('not found')) {
+          console.warn(`Model ${modelName} not available for image analysis, trying next...`);
+          continue;
+        }
+        // For other errors, throw immediately
+        throw modelError;
+      }
+    }
+
+    // If all models failed, throw the last error
+    throw lastError;
   } catch (error: any) {
     console.error("Error analyzing image:", error);
 
@@ -265,6 +312,11 @@ Keep the explanation short, friendly, and easy to understand.
     const errorMessage = error?.message || error?.toString() || '';
     if (errorMessage.includes('RESOURCE_EXHAUSTED') || errorMessage.includes('quota')) {
       return "I'm currently experiencing high demand and have reached my usage limit for image analysis. Please try again in a few hours, or consult with a healthcare professional for immediate concerns.";
+    }
+
+    // Handle 404 errors (model not found)
+    if (errorMessage.includes('404') || errorMessage.includes('not found')) {
+      return "Image processing is currently unavailable. Please try again later or consult with a healthcare professional for immediate concerns.";
     }
 
     return "Image processing failed. Please try again later or ensure the image is clear and properly formatted.";
@@ -289,15 +341,6 @@ export const chatWithMediAI = async (
   try {
     // Build conversation context
     const conversationHistory = history.slice(-10).map(msg => `${msg.role}: ${msg.content}`).join('\n');
-
-    const model = genAI.getGenerativeModel({ 
-      model: "gemini-1.5-flash",
-      generationConfig: {
-        temperature: 0.7,
-        topP: 0.9,
-        maxOutputTokens: 800
-      }
-    });
 
     const prompt = `You are MediAI, a compassionate and highly skilled medical AI assistant. 
 You give safe, friendly, and medically accurate guidance.
@@ -328,17 +371,52 @@ Remember:
 You provide guidance but are NOT a replacement for a real doctor.
 `;
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
+    // Try primary model first, fallback to gemini-pro if not available
+    const modelsToTry = ["gemini-1.5-flash-latest", "gemini-pro"];
+    let lastError: any = null;
 
-    return text || "I apologize, but I couldn't process that request. Please try again.";
+    for (const modelName of modelsToTry) {
+      try {
+        const model = genAI.getGenerativeModel({ 
+          model: modelName,
+          generationConfig: {
+            temperature: 0.7,
+            topP: 0.9,
+            maxOutputTokens: 800
+          }
+        });
+
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const text = response.text();
+
+        return text || "I apologize, but I couldn't process that request. Please try again.";
+      } catch (modelError: any) {
+        lastError = modelError;
+        const errorMsg = modelError?.message || modelError?.toString() || '';
+        // If it's a 404 (model not found), try next model
+        if (errorMsg.includes('404') || errorMsg.includes('not found')) {
+          console.warn(`Model ${modelName} not available, trying next...`);
+          continue;
+        }
+        // For other errors, throw immediately
+        throw modelError;
+      }
+    }
+
+    // If all models failed, throw the last error
+    throw lastError;
   } catch (error: any) {
     console.error("Chat error:", error);
 
     // Handle specific API quota error with fallback response
     const errorMessage = error?.message || error?.toString() || '';
     if (errorMessage.includes('RESOURCE_EXHAUSTED') || errorMessage.includes('quota')) {
+      return getFallbackResponse(message, history);
+    }
+
+    // Handle 404 errors (model not found)
+    if (errorMessage.includes('404') || errorMessage.includes('not found')) {
       return getFallbackResponse(message, history);
     }
 
