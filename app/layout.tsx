@@ -1,12 +1,5 @@
 import { type Metadata } from 'next'
-import {
-  ClerkProvider,
-  SignInButton,
-  SignUpButton,
-  SignedIn,
-  SignedOut,
-  UserButton,
-} from '@clerk/nextjs'
+import { ClerkProvider } from '@clerk/nextjs'
 import { Inter, Roboto_Mono } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from '@/components/ThemeProvider'
@@ -32,7 +25,14 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <ClerkProvider publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}>
+    <ClerkProvider
+      publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+      signUpUrl="/sign-up"
+      signInUrl="/sign-in"
+      fallbackRedirectUrl="/"
+      afterSignInUrl="/"
+      afterSignUpUrl="/"
+    >
       <html lang="en" suppressHydrationWarning>
         <body className={`${inter.variable} ${robotoMono.variable} antialiased`}>
           <ThemeProvider

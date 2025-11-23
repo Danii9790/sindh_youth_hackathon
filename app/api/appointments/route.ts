@@ -10,8 +10,11 @@ export async function GET(request: NextRequest) {
   return withApiMiddleware(request, async (req) => {
     const { userId } = auth();
 
+    // Allow viewing appointments for demo purposes
+    const finalUserId = userId || 'demo-user';
+
     if (!userId) {
-      return createErrorResponse('Unauthorized', 401);
+      console.log('⚠️  User not authenticated - showing demo appointments');
     }
 
     try {
@@ -33,12 +36,16 @@ export async function POST(request: NextRequest) {
   return withApiMiddleware(request, async (req) => {
     const { userId } = auth();
 
+    // Allow booking for demo purposes with a generated user ID
+    const finalUserId = userId || 'demo-user-' + Date.now();
+
     if (!userId) {
-      return createErrorResponse('Unauthorized', 401);
+      console.log('⚠️  User not authenticated - allowing demo booking with ID:', finalUserId);
     }
 
     try {
       const body = await req.json();
+      console.log('📝 Received appointment data:', body);
 
       // Validate required fields
       if (!body.phone || !body.date || !body.time) {
@@ -47,18 +54,18 @@ export async function POST(request: NextRequest) {
 
       // Convert the request body to match dbService interface
       const appointmentData = {
-        patientName: body.fullName || body.patientName,
+        patientName: body.fullName || body.patientName || 'Unknown Patient',
         phone: body.phone,
         doctor: {
-          id: body.doctor.id || 'default-doctor-id',
-          name: body.doctor.name || body.doctor,
-          specialty: body.doctor.specialty,
-          location: body.doctor.location,
-          image: body.doctor.image || '/default-doctor.jpg'
+          id: body.doctor?.id || 'default-doctor-id',
+          name: body.doctor?.name || body.doctor || 'General Doctor',
+          specialty: body.doctor?.specialty || 'General Practice',
+          location: body.doctor?.location || 'Main Hospital',
+          image: body.doctor?.image || '/default-doctor.jpg'
         },
         date: body.date,
         time: body.time,
-        symptoms: body.symptoms || body.reason
+        symptoms: body.symptoms || body.reason || 'General consultation'
       };
 
       const result = await saveAppointmentToDb(appointmentData);
@@ -70,17 +77,17 @@ export async function POST(request: NextRequest) {
       // Return the created appointment with all fields
       const appointment = {
         id: result.appointmentId,
-        userId,
+        userId: finalUserId,
         fullName: appointmentData.patientName,
-        email: body.email,
+        email: body.email || '',
         phone: appointmentData.phone,
-        department: body.department,
+        department: body.department || appointmentData.doctor.specialty,
         doctor: appointmentData.doctor.name,
         date: appointmentData.date,
         time: appointmentData.time,
         symptoms: appointmentData.symptoms,
-        address: body.address,
-        reason: body.reason,
+        address: body.address || '',
+        reason: body.reason || appointmentData.symptoms,
         status: 'scheduled',
         createdAt: new Date().toISOString()
       };

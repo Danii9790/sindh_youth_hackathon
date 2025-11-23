@@ -15,12 +15,11 @@ import {
 } from 'lucide-react';
 import { Message, Sender, Doctor, Conversation, DatabaseAppointment } from '@/types';
 
-// NOTE: geminiService is no longer statically imported to avoid module-init errors in browser
-// import { analyzeSymptoms, analyzeImage, chatWithMediAI } from '@/services/geminiService';
+import { analyzeSymptoms, analyzeImage, chatWithMediAI } from '@/services/geminiClientService';
 import { AppointmentSlip } from './AppointmentSlip';
 import { ConversationSidebar } from './ConversationSidebar';
 import { ThemeToggle } from './ThemeToggle';
-import { ConversationService } from '@/services/conversationService';
+import { ConversationApiService } from '@/services/conversationApiService';
 import { saveAppointment, checkAppointmentAvailability, validateAppointmentDateTime, getUserAppointments } from '@/services/appointmentApi';
 import { PDFService } from '@/services/pdfService';
 import { useUser, useClerk } from '@clerk/nextjs';
@@ -142,7 +141,7 @@ export const MediAIApp: React.FC = () => {
   const loadUserConversations = async () => {
     try {
       setIsConversationsLoading(true);
-      const userConversations = await ConversationService.getConversations(user!.id);
+      const userConversations = await ConversationApiService.getConversations(user!.id);
       setConversations(userConversations);
 
       // If there are conversations, load the most recent one
@@ -170,7 +169,7 @@ export const MediAIApp: React.FC = () => {
   // Load messages for a specific conversation
   const loadConversationMessages = async (conversationId: string) => {
     try {
-      const conversationMessages = await ConversationService.getConversationMessages(conversationId);
+      const conversationMessages = await ConversationApiService.getConversationMessages(conversationId);
       setMessages(conversationMessages);
     } catch (error) {
       console.error('Error loading conversation messages:', error);
@@ -219,7 +218,7 @@ export const MediAIApp: React.FC = () => {
     try {
       // Create a new conversation with a welcome message
       const welcomeMessage = "Hello! Welcome to MediAI Pro. 👋\n\nI can help you with:\n🩺 Analyze symptoms and health concerns\n📋 Review medical reports and images\n📅 Book appointments with available doctors\n\nHow are you feeling today? Or click the 📅 button to book an appointment!";
-      const newConversation = await ConversationService.createConversation(user!.id, welcomeMessage);
+      const newConversation = await ConversationApiService.createConversation(user!.id, welcomeMessage);
 
       setConversations(prev => [newConversation, ...prev]);
       setCurrentConversationId(newConversation.id);
@@ -242,7 +241,7 @@ export const MediAIApp: React.FC = () => {
 
   const handleRenameConversation = useCallback(async (conversationId: string, newTitle: string) => {
     try {
-      await ConversationService.updateConversationTitle(conversationId, newTitle);
+      await ConversationApiService.updateConversationTitle(conversationId, newTitle);
       setConversations(prev =>
         prev.map(conv =>
           conv.id === conversationId ? { ...conv, title: newTitle, updatedAt: new Date() } : conv
@@ -258,7 +257,7 @@ export const MediAIApp: React.FC = () => {
       const conversation = conversations.find(c => c.id === conversationId);
       const newArchiveState = !conversation?.isArchived;
 
-      await ConversationService.archiveConversation(conversationId, newArchiveState);
+      await ConversationApiService.archiveConversation(conversationId, newArchiveState);
       setConversations(prev =>
         prev.map(conv =>
           conv.id === conversationId ? { ...conv, isArchived: newArchiveState } : conv
@@ -281,7 +280,7 @@ export const MediAIApp: React.FC = () => {
 
   const handleDeleteConversation = useCallback(async (conversationId: string) => {
     try {
-      await ConversationService.deleteConversation(conversationId);
+      await ConversationApiService.deleteConversation(conversationId);
       setConversations(prev => prev.filter(conv => conv.id !== conversationId));
 
       // If we deleted the current conversation, switch to another one
@@ -322,61 +321,50 @@ export const MediAIApp: React.FC = () => {
 
     // If there's no current conversation, create one
     if (!conversationId) {
-      const newConversation = await ConversationService.createConversation(user!.id, input || "New conversation");
+      const newConversation = await ConversationApiService.createConversation(user!.id, input || "New conversation");
       setConversations(prev => [newConversation, ...prev]);
       setCurrentConversationId(newConversation.id);
       conversationId = newConversation.id;
     }
 
-    const newUserMsg: Message = {
-      id: Date.now().toString(),
-      text: input,
-      sender: Sender.USER,
-      timestamp: new Date(),
-      attachment: previewUrl || undefined,
-      conversationId
-    };
-
-    // add user message immediately to UI
-    setMessages(prev => [...prev, newUserMsg]);
+    // Save user message to database and add to UI
     const currentFile = selectedFile; // Capture file for async
     const currentInput = input;
+    let userMessage: Message;
+
+    if (currentFile) {
+      userMessage = await ConversationApiService.createMessage(
+        conversationId!,
+        input || "Image analysis",
+        Sender.USER,
+        currentFile.name,
+        currentFile.type,
+        currentFile.size
+      );
+    } else {
+      userMessage = await ConversationApiService.createMessage(
+        conversationId!,
+        input,
+        Sender.USER
+      );
+    }
+
+    // add user message immediately to UI
+    setMessages(prev => [...prev, userMessage]);
     setInput('');
     clearFile();
     setIsAnalyzing(true);
 
-    // Update conversation with new message (best-effort)
+    // Refresh conversations list to get updated counts and timestamps
     try {
-      await ConversationService.updateConversationOnMessage(
-        conversationId,
-        currentInput || "Image analysis",
-        (messages.length || 0) + 1
-      );
-
-      // Update conversations list
-      setConversations(prev =>
-        prev.map(conv =>
-          conv.id === conversationId
-            ? {
-                ...conv,
-                lastMessage: currentInput || "Image analysis",
-                messageCount: (conv.messageCount || 0) + 1,
-                updatedAt: new Date()
-              }
-            : conv
-        ).sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-      );
+      const updatedConversations = await ConversationApiService.getConversations(user!.id);
+      setConversations(updatedConversations);
     } catch (error) {
-      console.error('Error updating conversation:', error);
+      console.error('Error refreshing conversations:', error);
     }
 
     // --- Logic Router ---
     try {
-      // Dynamically import geminiService here to avoid module init at top-level
-      const gemini = await import('@/services/geminiService');
-      const analyzeImage = gemini.analyzeImage;
-      const analyzeSymptoms = gemini.analyzeSymptoms;
-      const chatWithMediAI = gemini.chatWithMediAI;
 
       let responseText = '';
 
@@ -401,36 +389,75 @@ export const MediAIApp: React.FC = () => {
           reader.readAsDataURL(currentFile);
         });
         responseText = analyzeImageData;
-        addBotMessage(responseText, conversationId);
+        await addBotMessage(responseText, conversationId);
       }
       // 2. Symptom Analysis (Keywords)
       else if (isSymptomRelated(currentInput)) {
         responseText = await analyzeSymptoms(currentInput);
-        addBotMessage(responseText, conversationId);
+        await addBotMessage(responseText, conversationId);
       }
       // 3. General Chat
       else {
         const history = messages.map(m => ({ role: m.sender === Sender.USER ? 'user' : 'model', content: m.text }));
         responseText = await chatWithMediAI(history, currentInput);
-        addBotMessage(responseText, conversationId);
+        await addBotMessage(responseText, conversationId);
       }
 
     } catch (error) {
       console.error("Error in message processing:", error);
-      addBotMessage("Sorry, I encountered an error connecting to the server. Please try again.", conversationId);
+
+      let errorMessage = "I'm having technical difficulties right now. Please try again in a moment.";
+
+      // Check for specific error types and provide helpful messages
+      if (error instanceof Error) {
+        if (error.message.includes('quota') || error.message.includes('RESOURCE_EXHAUSTED')) {
+          errorMessage = "I'm currently experiencing high demand and have reached my usage limit. Please try again in a few hours, or consult with a healthcare professional for immediate concerns.";
+        } else if (error.message.includes('network') || error.message.includes('fetch')) {
+          errorMessage = "I'm having trouble connecting to my services. Please check your internet connection and try again.";
+        } else if (error.message.includes('timeout')) {
+          errorMessage = "The request is taking too long. Please try again with a shorter message.";
+        }
+      }
+
+      await addBotMessage(errorMessage, conversationId);
     } finally {
       setIsAnalyzing(false);
     }
   };
 
-  const addBotMessage = (text: string, conversationId?: string) => {
-    setMessages(prev => [...prev, {
-      id: Date.now().toString(),
-      text: text,
-      sender: Sender.BOT,
-      timestamp: new Date(),
-      conversationId: conversationId || currentConversationId || undefined
-    }]);
+  const addBotMessage = async (text: string, conversationId?: string) => {
+    const targetConversationId = conversationId || currentConversationId;
+
+    if (targetConversationId) {
+      try {
+        // Save bot message to database
+        const botMessage = await ConversationApiService.createMessage(
+          targetConversationId,
+          text,
+          Sender.BOT
+        );
+
+        // Add to UI
+        setMessages(prev => [...prev, botMessage]);
+
+        // Refresh conversations list to get updated counts
+        if (user) {
+          const updatedConversations = await ConversationApiService.getConversations(user.id);
+          setConversations(updatedConversations);
+        }
+      } catch (error) {
+        console.error('Error saving bot message to database:', error);
+        // Fallback: add to UI only
+        setMessages(prev => [...prev, {
+          id: Date.now().toString(),
+          text: text,
+          sender: Sender.BOT,
+          timestamp: new Date(),
+          conversationId: targetConversationId
+        }]);
+      }
+    }
+
     setIsAnalyzing(false);
   };
 
@@ -448,7 +475,7 @@ export const MediAIApp: React.FC = () => {
       const doctor = DOCTORS.find(d => d.id === bookingForm.doctor);
 
       if (!doctor) {
-        addBotMessage("❌ Error: Doctor not found. Please select a valid doctor.");
+        await addBotMessage("❌ Error: Doctor not found. Please select a valid doctor.");
         setIsSubmittingBooking(false);
         return;
       }
@@ -456,7 +483,7 @@ export const MediAIApp: React.FC = () => {
       // Validate appointment date and time first
       const validationResult = await validateAppointmentDateTime(bookingForm.date, bookingForm.time);
       if (!validationResult.valid) {
-        addBotMessage(`❌ ${validationResult.message}`);
+        await addBotMessage(`❌ ${validationResult.message}`);
         setIsSubmittingBooking(false);
         return;
       }
@@ -464,7 +491,7 @@ export const MediAIApp: React.FC = () => {
       // Check if the time slot is available
       const availabilityResult = await checkAppointmentAvailability(bookingForm.date, bookingForm.time);
       if (!availabilityResult.available) {
-        addBotMessage(`❌ ${availabilityResult.message}`);
+        await addBotMessage(`❌ ${availabilityResult.message}`);
         setIsSubmittingBooking(false);
         return;
       }
@@ -489,7 +516,7 @@ export const MediAIApp: React.FC = () => {
       const result = await saveAppointment(appointmentData);
 
       if (!result.success) {
-        addBotMessage(`❌ Booking failed: ${result.message}`);
+        await addBotMessage(`❌ Booking failed: ${result.message}`);
         setIsSubmittingBooking(false);
         return;
       }
@@ -517,11 +544,26 @@ export const MediAIApp: React.FC = () => {
       // Refresh user appointments
       await loadUserAppointments();
 
-      addBotMessage(`✅ Appointment booked successfully!\n\n📋 **Appointment Details:**\n• **Doctor:** Dr. ${doctor.name} (${doctor.specialty})\n• **Department:** ${bookingForm.department.charAt(0).toUpperCase() + bookingForm.department.slice(1)}\n• **Date:** ${new Date(bookingForm.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}\n• **Time:** ${bookingForm.time}\n• **Symptoms:** ${bookingForm.symptoms}\n• **Address:** ${bookingForm.address}\n• **Status:** ${newAppointment.status}\n\nA confirmation slip has been generated for you to download. You'll receive a reminder 24 hours before your appointment.`);
+      await addBotMessage(`✅ Appointment booked successfully!\n\n📋 **Appointment Details:**\n• **Doctor:** Dr. ${doctor.name} (${doctor.specialty})\n• **Department:** ${bookingForm.department.charAt(0).toUpperCase() + bookingForm.department.slice(1)}\n• **Date:** ${new Date(bookingForm.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}\n• **Time:** ${bookingForm.time}\n• **Symptoms:** ${bookingForm.symptoms}\n• **Address:** ${bookingForm.address}\n• **Status:** ${newAppointment.status}\n\nA confirmation slip has been generated for you to download. You'll receive a reminder 24 hours before your appointment.`);
 
     } catch (error) {
       console.error("Booking error:", error);
-      addBotMessage(`❌ Booking failed: ${error instanceof Error ? error.message : 'Please try again later.'}`);
+
+      let errorMessage = "I encountered an error while booking your appointment. Please try again.";
+
+      if (error instanceof Error) {
+        if (error.message.includes('network') || error.message.includes('fetch')) {
+          errorMessage = "I'm having trouble connecting to the booking system. Please check your internet connection and try again.";
+        } else if (error.message.includes('Unauthorized') || error.message.includes('401')) {
+          errorMessage = "Please make sure you're logged in to book appointments. You can still use all other features without logging in.";
+        } else if (error.message.includes('quota') || error.message.includes('limit')) {
+          errorMessage = "The appointment system is experiencing high demand. Please try again in a few minutes.";
+        } else if (error.message.includes('validation')) {
+          errorMessage = "Please check your appointment details and try again. Make sure all required fields are filled correctly.";
+        }
+      }
+
+      await addBotMessage(`❌ ${errorMessage}\n\n💡 If you continue to have issues, please try refreshing the page or contact support.`);
     } finally {
       setIsSubmittingBooking(false);
     }

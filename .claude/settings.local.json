@@ -6,7 +6,16 @@
       "Bash(netstat:*)",
       "Bash(findstr:*)",
       "Bash(powershell:*)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(node:*)",
+      "Bash(npm install:*)",
+      "Bash(curl:*)",
+      "Bash(npm ls:*)",
+      "Bash(timeout:*)",
+      "Bash(database/test_connection.js)",
+      "Bash(database/run_migration.js)",
+      "Bash(npm run build)",
+      "Bash(tasklist:*)"
     ],
     "deny": [],
     "ask": []

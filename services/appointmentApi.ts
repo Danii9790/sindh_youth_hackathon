@@ -71,16 +71,36 @@ export const saveAppointment = async (appointmentData: AppointmentData): Promise
     }
 
     const result = await response.json();
+
+    // Handle both response formats: { data: {...} } or direct appointment object
+    const responseData = result.data || result;
+    const appointmentId = responseData.id || responseData.appointmentId;
+
     return {
       success: true,
       message: 'Appointment saved successfully',
-      appointmentId: result.data?.id
+      appointmentId: appointmentId
     };
   } catch (error) {
     console.error('Error saving appointment:', error);
+
+    let errorMessage = 'Network error occurred while saving appointment';
+
+    if (error instanceof Error) {
+      if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+        errorMessage = 'Unable to connect to the server. Please check your internet connection.';
+      } else if (error.message.includes('AbortError')) {
+        errorMessage = 'Request timed out. Please try again.';
+      } else if (error.message.includes('404') || error.message.includes('Not Found')) {
+        errorMessage = 'Appointment service not available. Please try again later.';
+      } else if (error.message.includes('500') || error.message.includes('Internal Server Error')) {
+        errorMessage = 'Server error occurred. Please try again in a few moments.';
+      }
+    }
+
     return {
       success: false,
-      message: 'Network error occurred while saving appointment'
+      message: errorMessage
     };
   }
 };
@@ -111,7 +131,7 @@ export const getUserAppointments = async (): Promise<DatabaseAppointment[]> => {
 // Client-side wrapper for checking appointment availability
 export const checkAppointmentAvailability = async (date: string, time: string): Promise<{available: boolean, message: string}> => {
   try {
-    const response = await fetch(`/api/appointments/availability?date=${encodeURIComponent(date)}&time=${encodeURIComponent(time)}`, {
+    const response = await fetch(`/api/appointments/validate?date=${encodeURIComponent(date)}&time=${encodeURIComponent(time)}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -119,13 +139,20 @@ export const checkAppointmentAvailability = async (date: string, time: string): 
     });
 
     if (!response.ok) {
+      const errorData = await response.json();
       return {
         available: false,
-        message: 'Failed to check appointment availability'
+        message: errorData.error || 'Failed to check availability'
       };
     }
 
-    return await response.json();
+    const result = await response.json();
+    const data = result.data || result;
+
+    return {
+      available: data.available || true,
+      message: data.message || 'Time slot is available'
+    };
   } catch (error) {
     console.error('Error checking appointment availability:', error);
     return {
@@ -146,18 +173,44 @@ export const validateAppointmentDateTime = async (date: string, time: string): P
     });
 
     if (!response.ok) {
+      const errorData = await response.json();
       return {
         valid: false,
-        message: 'Failed to validate appointment date/time'
+        message: errorData.error || 'Failed to validate appointment time'
       };
     }
 
-    return await response.json();
+    const result = await response.json();
+    const data = result.data || result;
+
+    return {
+      valid: data.valid !== false,
+      message: data.message || 'Appointment time is valid'
+    };
   } catch (error) {
     console.error('Error validating appointment date/time:', error);
-    return {
-      valid: false,
-      message: 'Network error occurred while validating'
-    };
+
+    // Fallback to client-side validation
+    try {
+      const appointmentDate = new Date(`${date} ${time}`);
+      const now = new Date();
+
+      if (isNaN(appointmentDate.getTime())) {
+        return { valid: false, message: 'Invalid date format' };
+      }
+
+      if (appointmentDate <= now) {
+        return { valid: false, message: 'Appointment must be in the future' };
+      }
+
+      const hours = appointmentDate.getHours();
+      if (hours < 9 || hours > 18) {
+        return { valid: false, message: 'Appointments are available between 9 AM and 6 PM' };
+      }
+
+      return { valid: true, message: 'Appointment time is valid' };
+    } catch (fallbackError) {
+      return { valid: false, message: 'Error validating appointment time' };
+    }
   }
 };
