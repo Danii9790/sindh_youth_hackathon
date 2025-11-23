@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { analyzeSymptoms } from '@/services/geminiService';
+import { analyzeSymptoms } from '@/services/openai_model';
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Use the real Gemini AI service for symptom analysis
+    // Use the OpenAI GPT-4o-mini service for symptom analysis
     const analysis = await analyzeSymptoms(symptoms);
 
     return NextResponse.json({ analysis });

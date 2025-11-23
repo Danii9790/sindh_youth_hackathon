@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { Message, Sender, Doctor, Conversation, DatabaseAppointment } from '@/types';
 
-import { analyzeSymptoms, analyzeImage, chatWithMediAI } from '@/services/geminiClientService';
+import { analyzeSymptoms, analyzeImage, chatWithMediAI } from '@/services/openai_client';
 import { AppointmentSlip } from './AppointmentSlip';
 import { ConversationSidebar } from './ConversationSidebar';
 import { ThemeToggle } from './ThemeToggle';

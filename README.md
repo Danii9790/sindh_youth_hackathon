@@ -22,7 +22,7 @@ This project was developed for the Sindh Youth Hackathon with the goal of improv
 ## 🛠️ Tech Stack
 
 - **Frontend**: Next.js 16 with React 19
-- **AI/ML**: Google Gemini API for intelligent analysis
+- **AI/ML**: OpenAI GPT-4o-mini for intelligent analysis
 - **UI/UX**: Tailwind CSS with Lucide React icons
 - **Database**: PostgreSQL with Neon Serverless
 - **Language**: TypeScript for type safety
@@ -51,7 +51,7 @@ This project was developed for the Sindh Youth Hackathon with the goal of improv
 
 - Node.js 18+
 - npm or yarn package manager
-- Google Gemini API key
+- OpenAI API key
 
 ### Local Development
 
@@ -70,7 +70,7 @@ This project was developed for the Sindh Youth Hackathon with the goal of improv
 
    ```bash
    # Create .env.local file
-   echo "GEMINI_API_KEY=your_gemini_api_key_here" > .env.local
+   echo "OPENAI_API_KEY=your_openai_api_key_here" > .env.local
    ```
 4. **Run the development server**
 
@@ -105,14 +105,14 @@ The easiest way to deploy this app is to use the [Vercel Platform](https://verce
 
    Follow the prompts to link your project to Vercel. Make sure to set your environment variables in the Vercel dashboard:
 
-   - `GEMINI_API_KEY`: Your Google Gemini API key
+   - `OPENAI_API_KEY`: Your OpenAI API key
    - `NEON_POSTGRES_URL`: Your PostgreSQL database URL (if using)
 
 3. **Environment Variables**
 
    Add these in your Vercel project settings under Environment Variables:
    ```
-   GEMINI_API_KEY=your_gemini_api_key_here
+   OPENAI_API_KEY=your_openai_api_key_here
    NEON_POSTGRES_URL=your_postgres_database_url_here
    ```
 
@@ -125,7 +125,7 @@ Your app will be automatically deployed and available at a `.vercel.app` URL.
 Create a `.env.local` file with the following variables:
 
 ```env
-GEMINI_API_KEY=your_gemini_api_key_here
+OPENAI_API_KEY=your_openai_api_key_here
 DATABASE_URL=your_postgres_database_url_here  # Optional: for full functionality
 ```
 
@@ -139,7 +139,7 @@ sindh_youth_hackathon/
 ├── components/            # React components
 │   └── AppointmentSlip.tsx # Appointment PDF generator
 ├── services/              # Backend services
-│   └── geminiService.ts   # AI service integration
+│   └── openai_model.ts   # AI service integration
 ├── types.ts               # TypeScript type definitions
 ├── next.config.js         # Next.js configuration
 ├── vercel.json            # Vercel deployment configuration
@@ -184,7 +184,7 @@ This project is open-source and available under the [MIT License](LICENSE).
 ## 🙏 Acknowledgments
 
 - **Sindh Youth Hackathon 2025** - Organizers and mentors
-- **Google Gemini API** - For AI capabilities
+- **OpenAI GPT-4o-mini** - For AI capabilities
 - **Next.js Team** - For the excellent framework
 - **Healthcare Professionals** - For domain expertise and validation
 

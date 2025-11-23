@@ -1,5 +1,5 @@
-// Client-side service for Gemini AI interactions
-// This file calls the API routes which then use the server-side geminiService
+// Client-side service for OpenAI GPT-4o-mini interactions
+// This file calls the API routes which then use the server-side openai_model service
 
 export const analyzeSymptoms = async (symptoms: string): Promise<string> => {
   try {

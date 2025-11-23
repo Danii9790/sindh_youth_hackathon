@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { analyzeImage } from '@/services/geminiService';
+import { analyzeImage } from '@/services/openai_model';
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Use the real Gemini AI service for image analysis
+    // Use the OpenAI GPT-4o-mini service for image analysis
     const analysis = await analyzeImage(image, prompt || 'Please analyze this medical image and provide your insights.');
 
     return NextResponse.json({ analysis });

@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { chatWithMediAI } from '@/services/geminiService';
-
-export const runtime = 'edge';
-export const preferredRegion = ['iad1']; // Gemini allowed region
+import { chatWithMediAI } from '@/services/openai_model';
 
 export async function POST(request: NextRequest) {
   try {
