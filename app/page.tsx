@@ -1,9 +1,6 @@
 'use client';
 
 import { useUser } from '@clerk/nextjs';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
-import Link from 'next/link';
 import { MediAIApp } from '@/components/MediAIApp';
 import { LandingPage } from '@/components/LandingPage';
 
@@ -26,9 +23,5 @@ export default function Page() {
   }
 
   // If not authenticated, show the landing page
-  return (
-    <div>
-      <LandingPage/>
-    </div>
-  );
+  return <LandingPage />;
 }
