@@ -5,11 +5,11 @@ import { auth } from '@clerk/nextjs/server';
 export const dynamic = 'force-dynamic';
 
 // Admin user IDs from environment (private)
-const ADMIN_USERS = process.env.ADMIN_USERS?.split(',') || [];
+const ADMIN_USERS = process.env.ADMIN_USERS?.split(',') || process.env.NEXT_PUBLIC_ADMIN_USERS?.split(',') || [];
 
 export async function GET(request: NextRequest) {
   try {
-    const { userId } = auth();
+    const { userId } = await auth();
 
     if (!userId || !ADMIN_USERS.includes(userId)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
