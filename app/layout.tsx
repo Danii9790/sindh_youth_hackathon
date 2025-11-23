@@ -31,8 +31,6 @@ export default function RootLayout({
       signInUrl="/sign-in"
       signInFallbackRedirectUrl="/dashboard"
       signUpFallbackRedirectUrl="/dashboard"
-      afterSignInUrl="/dashboard"
-      afterSignUpUrl="/dashboard"
     >
       <html lang="en" suppressHydrationWarning>
         <body className={`${inter.variable} ${robotoMono.variable} antialiased`}>
