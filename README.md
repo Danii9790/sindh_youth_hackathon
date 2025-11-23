@@ -332,9 +332,9 @@ Your app will be live at `your-app.vercel.app`! 🎉
 - **📱 WhatsApp Group**: +92 3XX XXXXXXX
 
 ### Project Collaboration
-- **🔗 GitHub Repository**: [MediAI Pro](https://github.com/daniyalxdev/mediai-pro)
-- **🌐 Live Demo**: [medi.ai-pro.vercel.app](https://medi.ai-pro.vercel.app)
-- **📋 Project Issues**: [GitHub Issues](https://github.com/daniyalxdev/mediai-pro/issues)
+- **🔗 GitHub Repository**: [MediAI Pro](https://github.com/Danii9790/sindh_youth_hackathon/)
+- **🌐 Live Demo**: [medi.ail.app](https://www.doctoragent.systems/)
+- **📋 Project Issues**: [GitHub Issues](https://github.com/Danii9790/sindh_youth_hackathon)
 
 ---
 
