@@ -58,8 +58,11 @@ export const AdminDashboardClient: React.FC = () => {
 
   useEffect(() => {
     // Server-side authentication already verified this is an admin
-    fetchDashboardData();
-  }, []);
+    // Only fetch data if user is loaded
+    if (user) {
+      fetchDashboardData();
+    }
+  }, [user]);
 
   const fetchDashboardData = async () => {
     setIsLoading(true);
@@ -69,6 +72,9 @@ export const AdminDashboardClient: React.FC = () => {
       if (statsResponse.ok) {
         const statsData = await statsResponse.json();
         setStats(statsData);
+      } else if (statsResponse.status === 401) {
+        // User is not authorized - this should not happen if middleware is working
+        console.warn('Unauthorized access to admin stats');
       }
 
       // Fetch appointments
@@ -76,6 +82,9 @@ export const AdminDashboardClient: React.FC = () => {
       if (appointmentsResponse.ok) {
         const appointmentsData = await appointmentsResponse.json();
         setAppointments(appointmentsData);
+      } else if (appointmentsResponse.status === 401) {
+        // User is not authorized - this should not happen if middleware is working
+        console.warn('Unauthorized access to admin appointments');
       }
     } catch (error) {
       console.error('Error fetching admin data:', error);
