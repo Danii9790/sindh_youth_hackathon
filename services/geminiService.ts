@@ -121,7 +121,7 @@ export const analyzeSymptoms = async (symptoms: string): Promise<string> => {
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
+      model: "gemini-1.5-flash",
 
       contents: `You are **Dr. AI**, a senior physician with 25 years of clinical experience.
 Your job is to carefully analyze the patient's symptoms and give clear, helpful medical guidance.
@@ -200,7 +200,7 @@ export const analyzeImage = async (base64Image: string, prompt: string): Promise
     const cleanBase64 = base64Image.split(",")[1] || base64Image;
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
+      model: "gemini-1.5-flash",
 
       contents: {
         parts: [
@@ -294,7 +294,7 @@ export const chatWithMediAI = async (
     const conversationHistory = history.slice(-10).map(msg => `${msg.role}: ${msg.content}`).join('\n');
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
+      model: "gemini-1.5-flash",
 
       contents: `You are MediAI, a compassionate and highly skilled medical AI assistant. 
 You give safe, friendly, and medically accurate guidance.
