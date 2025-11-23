@@ -5,7 +5,6 @@
   <p><strong>A Revolutionary AI Triage System Built with OpenAI GPT-4o-mini</strong></p>
 </div>
 
-![Hackathon Banner](https://img.shields.io/badge/HEC-GenAI_Hackathon-2024-blue?style=for-the-badge&logo=education)
 ![Tech Stack](https://img.shields.io/badge/Tech-Next.js_Tailwind_Clerk-blue?style=for-the-badge)
 ![AI Model](https://img.shields.io/badge/AI-OpenAI_GPT--4o--mini-green?style=for-the-badge&logo=openai)
 
@@ -240,10 +239,10 @@ Your app will be live at `your-app.vercel.app`! 🎉
 ## 🤝 Development Team
 
 ### 👨‍💻 Lead Developer
-**Daniyal Sheikh** - *Full-Stack Developer & AI Engineer*
+**Muhammad Daniyal** - *Full-Stack Developer & AI Engineer*
 - 📧 Email: 24ds34@quest.edu.pk
-- 🐙 GitHub: [@daniyalxdev](https://github.com/daniyalxdev)
-- 💼 LinkedIn: [Daniyal Sheikh](https://linkedin.com/in/daniyal-sheikh)
+- 🐙 GitHub: [@daniyalxdev](https://github.com/Danii9790)
+- 💼 LinkedIn: [Muhammad Daniyal](https://www.linkedin.com/in/daniyalxdev)
 
 ### 🏆 Hackathon Organizers
 - **🇵🇰 HEC Pakistan** - Higher Education Commission
@@ -379,7 +378,7 @@ This project is open-source and available under the [MIT License](LICENSE).
 ---
 
 <div align="center">
-  <h3>🎉 Made with ❤️ for HEC Generative AI Training Hackathon 2024</h3>
+  <h3>🎉 Made with ❤️ for HEC Generative AI Training Hackathon 2025</h3>
   <p><strong>Empowering Pakistani Healthcare Through AI Innovation</strong></p>
 
   <div>
